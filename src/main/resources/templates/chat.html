@@ -9,16 +9,22 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.1/stomp.min.js"></script>
     <style>
-        :root{
-          --accent: #0d6efd;
-          --muted: #6c757d;
-          --bubble-me: #e7f1ff;
-          --bubble-other: #f8f9fa;
+        :root {
+          --bg-dark: #0f172a;
+          --bg-card: rgba(30, 41, 59, 0.8);
+          --bg-input: #1e293b;
+          --text-light: #f1f5f9;
+          --text-muted: #94a3b8;
+          --accent: #3b82f6;
+          --bubble-me: #3b82f6;
+          --bubble-other: #334155;
         }
 
         body, html {
           height: 100%;
-          background: #fff;
+          background: var(--bg-dark);
+          color: var(--text-light);
+          font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
 
         .chat-shell {
@@ -30,129 +36,167 @@
           gap: 0.75rem;
         }
 
+        /* Header */
         .chat-header {
-          display:flex;
-          align-items:center;
-          gap:.75rem;
-          padding: .75rem 1rem;
-          border-radius: .5rem;
-          background: linear-gradient(90deg,#fff 0%, #fbfdff 100%);
-          box-shadow: 0 1px 2px rgba(16,24,40,.04);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.75rem 1rem;
+          border-radius: 1rem;
+          background: var(--bg-card);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
         }
 
+        /* Chat body */
         .chat-body {
-          display:flex;
+          display: flex;
           gap: 1rem;
           height: 100%;
         }
 
-        /* messages area */
+        /* Messages panel */
         .messages {
           flex: 1 1 0;
-          border-radius:.5rem;
+          border-radius: 1rem;
           padding: 1rem;
-          background: #fff;
-          border: 1px solid #e9ecef;
+          background: var(--bg-card);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           overflow-y: auto;
-          display:flex;
-          flex-direction:column;
-          gap:.6rem;
-          min-height:0; /* allow overflow in flex */
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+          min-height: 0;
+          scroll-behavior: smooth;
         }
 
+        /* Message bubble row */
         .message-row {
-          display:flex;
-          gap:.75rem;
-          align-items:flex-start;
-        }
-        .avatar {
-          width:40px;height:40px;border-radius:50%;
-          display:inline-flex;align-items:center;justify-content:center;
-          font-weight:700;color:#fff;background:var(--muted);
-          flex-shrink:0;
+          display: flex;
+          gap: 0.75rem;
+          align-items: flex-end;
+          animation: fadeIn 0.3s ease;
         }
 
-        .bubble {
-          max-width: 78%;
-          padding: .5rem .75rem;
-          border-radius: .6rem;
-          box-shadow: 0 1px 2px rgba(16,24,40,.04);
-          font-size: .95rem;
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .bubble.me { background: var(--bubble-me); margin-left: auto; border-bottom-right-radius: 0.25rem; }
-        .bubble.other { background: var(--bubble-other); border-bottom-left-radius: 0.25rem; }
+
+        /* Avatars */
+        .avatar {
+          width: 40px; height: 40px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          font-weight: bold; color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Chat bubbles */
+        .bubble {
+          max-width: 75%;
+          padding: 0.5rem 0.75rem;
+          border-radius: 1rem;
+          font-size: 0.95rem;
+          line-height: 1.4;
+          color: #fff;
+        }
+        .bubble.me {
+          background: var(--bubble-me);
+          border-bottom-right-radius: 0.3rem;
+        }
+        .bubble.other {
+          background: var(--bubble-other);
+          border-bottom-left-radius: 0.3rem;
+        }
 
         .meta {
-          font-size: .78rem;
-          color: var(--muted);
-          margin-top: .2rem;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          margin-top: 0.2rem;
         }
 
-        /* right column (optional) */
+        /* Sidebar */
         .sidebar {
           width: 240px;
-          border-radius:.5rem;
-          padding: .75rem;
-          border: 1px solid #e9ecef;
-          background: #fff;
-          display:flex;
-          flex-direction:column;
-          gap: .5rem;
+          border-radius: 1rem;
+          padding: 0.75rem;
+          background: var(--bg-card);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
         }
         .status-dot {
-          width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:.5rem;
+          width: 10px; height: 10px; border-radius: 50%;
+          display: inline-block; margin-right: 0.5rem;
         }
-        .status-online { background: #198754; }
-        .status-offline { background: #adb5bd; }
+        .status-online { background: #22c55e; }
+        .status-offline { background: #64748b; }
 
-        /* input bar sticky */
+        /* Chat input */
         .chat-input {
-          display:flex;
-          gap:.5rem;
-          align-items:center;
-          padding: .5rem;
-          border-radius:.5rem;
-          border: 1px solid #e9ecef;
-          background: #fff;
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+          padding: 0.5rem;
+          border-radius: 1rem;
+          background: var(--bg-card);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .chat-input .form-control { height: 46px; }
-        .chat-input .btn { height: 46px; }
-
-        /* compact debug messages */
-        .log-area {
-          max-height: 90px;
-          overflow:auto;
-          font-size:.85rem;
-          color:var(--muted);
-          white-space:pre-wrap;
+        .chat-input .form-control {
+          background: var(--bg-input);
+          color: var(--text-light);
+          border: none;
+          border-radius: 0.75rem;
+          height: 46px;
+          transition: background 0.2s;
+        }
+        .chat-input .form-control:focus {
+          background: #1e293b;
+          outline: none;
+          box-shadow: 0 0 0 2px var(--accent);
+        }
+        .chat-input .btn {
+          border-radius: 0.75rem;
+          height: 46px;
+          transition: transform 0.1s;
+        }
+        .chat-input .btn:hover {
+          transform: translateY(-1px);
         }
 
-        /* mobile adjustments */
-        @media (max-width: 767px){
+        /* Scrollbar styling */
+        .messages::-webkit-scrollbar {
+          width: 6px;
+        }
+        .messages::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 767px) {
           .chat-body { flex-direction: column; }
-          .sidebar { width:100%;}
+          .sidebar { width: 100%; order: -1; }
         }
     </style>
 </head>
 <body>
 <main class="chat-shell container">
-    <header class="chat-header align-items-center">
+    <header class="chat-header">
         <div>
             <h2 class="h4 mb-0">Chat Application</h2>
-            <small class="text-muted">Real-time chat with Spring Boot + WebSocket + STOMP</small>
+            <small>Real-time chat with WebSocket + STOMP</small>
         </div>
-
         <div class="ms-auto d-flex align-items-center gap-2">
             <span id="connectionStatus" class="badge bg-secondary">Connecting...</span>
-            <button id="clearLog" class="btn btn-sm btn-outline-secondary">Clear log</button>
+            <button id="clearLog" class="btn btn-sm btn-outline-light">Clear log</button>
         </div>
     </header>
 
     <section class="chat-body">
-        <section class="messages" id="messages" role="log" aria-live="polite" aria-atomic="false">
-            <!-- messages appended here -->
-        </section>
-
+        <section class="messages" id="messages" role="log" aria-live="polite"></section>
         <aside class="sidebar d-none d-md-flex">
             <div>
                 <h6 class="mb-1">Status</h6>
@@ -161,7 +205,6 @@
                     <small id="statusText">Disconnected</small>
                 </div>
             </div>
-
             <div>
                 <h6 class="mb-1">Users</h6>
                 <ul id="userList" class="list-unstyled small mb-0">
@@ -172,14 +215,13 @@
     </section>
 
     <form class="chat-input" id="chatForm" onsubmit="return false" aria-label="Send a message">
-        <input id="senderInput" type="text" class="form-control" placeholder="Your name..." aria-label="Your name" value="User1">
-        <input id="messageInput" type="text" class="form-control" placeholder="Type your message here" aria-label="Message">
+        <input id="senderInput" type="text" class="form-control" placeholder="Your name..." value="User1" />
+        <input id="messageInput" type="text" class="form-control" placeholder="Type your message..." />
         <button id="sendBtn" class="btn btn-primary" type="button" disabled>Send</button>
-        <button id="clearBtn" class="btn btn-outline-secondary" type="button" title="Clear messages">Clear</button>
+        <button id="clearBtn" class="btn btn-outline-light" type="button" title="Clear messages">Clear</button>
     </form>
 </main>
 
-<!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.1/stomp.min.js"></script>
 
